@@ -48,10 +48,9 @@ parser.add_argument('-d', '--dataset', type=str, default="banking77")
 parser.add_argument('-e', '--embedding', type=str, default="all-mpnet-base-v2")
 parser.add_argument('-r', '--dim-reduce', type=str, default="umap")
 parser.add_argument('-c', '--cluster', type=str, default="birch")
-parser.add_argument('-n', '--n-bootstraps', type=int, default=30)
+parser.add_argument('-n', '--n-bootstraps', type=int, default=10)
 parser.add_argument('-o', '--overwrite-existing', type=str, default="no")
-#parser.add_argument('-p', '--project-dir', type = str, default="/global/project/hpcg1614_shared/ca/")
-parser.add_argument('-p', '--project-dir', type = str, default="/global/home/hpc3552/conversation_analytics/experiments")
+parser.add_argument('-p', '--project-dir', type = str, default="./")
 parser.add_argument('-t', '--test-run', type=str, default="no")
 
 args = parser.parse_args()
@@ -70,7 +69,7 @@ timestr = time.strftime("%Y%m%d-%H%M%S")
 experiment_name = "{}_{}_{}_{}_{}_search".format(args.dataset, args.embedding, args.dim_reduce, args.cluster, args.n_bootstraps)
 
 # Make sure the output directory has been created
-out_dir = "{}/out/run_one".format(args.project_dir, experiment_name)
+out_dir = "{}/results".format(args.project_dir, experiment_name)
 df_fn = "{}/{}.csv".format(out_dir, experiment_name)
 
 # check if output file already exists
@@ -82,10 +81,6 @@ if args.dataset == "banking77":
     train_dir = "{}/data/banking77/".format(args.project_dir)
     text_col = "text"
     target_col = "category"
-elif args.dataset == "amazon_all":
-    train_dir = "{}/data/amazon-all".format(args.project_dir)
-    text_col = "utterance"
-    target_col = "intent"
 elif args.dataset == "clinc150":
     train_dir = "{}/data/clinc150".format(args.project_dir)
     text_col = "text"
@@ -579,8 +574,8 @@ def objective_func(trial, args, train_dir, text_col, target_col):
 search_space = {}
         
 if args.cluster.lower() == "birch":
-    search_space['threshold'] = [float(i) for i in np.linspace(0.01, 1.0, num=4, dtype=float)]
-    search_space['branching_factor'] = [int(i) for i in np.arange(25, 125, step=25, dtype=int)]
+    search_space['threshold'] = [float(i) for i in np.linspace(0.01, 1.0, num=3, dtype=float)]
+    search_space['branching_factor'] = [int(i) for i in np.arange(25, 125, step=50, dtype=int)]
 elif args.cluster.lower() == "k-means":
     pass
 elif args.cluster.lower() == "hierarchical":
@@ -626,9 +621,7 @@ elif args.cluster.lower() == "histgbc":
 # The search space for n_clusters (n_components for nmf and lda) depends on the dataset
 if args.cluster.lower() not in ['hdbscan', 'rf', 'lgbm', 'xgboost', 'knn', 'lr', 'histgbc']:
     if args.dataset == "banking77":
-        search_space['n_clusters'] = [int(i) for i in np.arange(50, 90, step=10, dtype=int)]
-    elif args.dataset == "amazon_all":
-        search_space['n_clusters'] = [int(i) for i in np.arange(20, 80, step=10, dtype=int)]
+        search_space['n_clusters'] = [int(i) for i in np.arange(50, 80, step=10, dtype=int)]
     elif args.dataset == "clinc150":
         search_space['n_clusters'] = [int(i) for i in np.arange(130, 160, step=10, dtype=int)]
     elif args.dataset == "hwu64":
